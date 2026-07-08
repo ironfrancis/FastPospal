@@ -6,6 +6,8 @@ FastPospal 是一个面向 **银豹 PosPal Web 后台** 的 Python SDK 与 MCP
 Server，为开发者和 AI Agent
 提供商品、会员、库存、货流、单据等业务能力的统一自动化接口。
 
+<img width="1306" height="1204" alt="ChatGPT Image 2026年7月9日 05_20_57" src="https://github.com/user-attachments/assets/1a1fa057-5130-4451-a2b3-659b64717413" />
+
 > **声明**
 >
 > -   本项目为社区维护项目，与银豹官方不存在任何关联。
@@ -195,6 +197,8 @@ AI Agent
 -   [ ] 官方 OpenAPI 适配
 
 ------------------------------------------------------------------------
+
+<img width="1672" height="941" alt="ChatGPT Image 2026年7月9日 05_22_19" src="https://github.com/user-attachments/assets/41b0929b-6b4c-488c-9ae9-38d0a21c95d4" />
 
 ## License
 
