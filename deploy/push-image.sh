@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # 本机构建 linux/amd64 镜像并推到服务器（避免生产机拉基础镜像过慢）
+# 日常发布可走 GitHub Actions：push/merge 到 main 自动部署（见 .github/workflows/deploy.yml）
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

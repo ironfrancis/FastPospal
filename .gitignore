@@ -13,6 +13,7 @@ build/
 htmlcov/
 .DS_Store
 .pospal_session.json
+._*
 
 # 本地/生产专用部署配置（含私有网络名、域名等，勿提交）
 deploy/docker-compose.prod.yml

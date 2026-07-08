@@ -136,6 +136,24 @@ Agent 将自动调用对应 MCP 工具。
 4.  客户端 MCP URL 与 Nginx location 保持一致，例如
     `https://mmsd.site/pospal/mcp`。
 
+### GitHub Actions 自动部署
+
+`main` 分支 push 或 merge 后，`.github/workflows/deploy.yml` 会自动：
+
+1.  `uv sync` + 静态检查
+2.  构建 `linux/amd64` 镜像
+3.  SSH 上传到生产机并 `docker compose up -d`
+
+首次启用需在 GitHub 仓库 **Settings → Secrets and variables → Actions** 添加：
+
+| Secret | 说明 |
+|--------|------|
+| `SSH_PRIVATE_KEY` | 能登录生产机的私钥（对应公钥写入服务器 `authorized_keys`） |
+
+生产机地址等写在 workflow 的 `env` 里（与 `deploy/push-image.sh` 一致）。服务器上的 `.env` **不会**被同步覆盖。
+
+本地紧急发布仍可用：`bash deploy/push-image.sh`
+
 ------------------------------------------------------------------------
 
 ## 架构
