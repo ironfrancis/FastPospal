@@ -16,7 +16,7 @@ load_dotenv()
 mcp = FastMCP(
     "FastPospal",
     instructions=(
-        "银豹 PosPal 门店 MCP 服务。基于云后台私有 Web API 逆向，"
+        "银豹 PosPal 门店 MCP 服务。封装银豹云后台 Web API，"
         "支持商品/分类/会员/库存/货流/单据/网单/采购的读写操作。"
         "写操作会修改门店真实数据，仅在测试账号或明确授权时使用。"
         "环境变量：POSPAL_ACCOUNT, POSPAL_PASSWORD。"

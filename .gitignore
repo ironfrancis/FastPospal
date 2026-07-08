@@ -15,6 +15,9 @@ htmlcov/
 .pospal_session.json
 ._*
 
+# 本地接口探测输出（可能含账号/门店信息）
+scripts/test_interfaces_result.json
+
 # 本地/生产专用部署配置（含私有网络名、域名等，勿提交）
 deploy/docker-compose.prod.yml
 deploy/nginx-*.conf

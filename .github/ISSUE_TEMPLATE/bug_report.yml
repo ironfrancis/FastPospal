@@ -1,0 +1,79 @@
+name: Bug 报告
+description: SDK、MCP 工具或部署相关的问题
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请确认：已在 [Issues](https://github.com/ironfrancis/FastPospal/issues) 中搜索过类似问题。
+        **请勿在 Issue 中粘贴真实账号、密码或 Token。**
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 简要说明发生了什么
+      placeholder: 调用 pospal_list_products 时返回空列表，但 Web 后台可见数据
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 尽量给出可复现的最小步骤
+      placeholder: |
+        1. uv sync && cp .env.example .env
+        2. uv run fastmcp run server.py:mcp
+        3. 调用 pospal_xxx ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 如有报错，请贴完整 traceback 或 MCP 返回内容（脱敏后）
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 相关模块
+      options:
+        - Python SDK（fastpospal/）
+        - MCP Server（server.py）
+        - HTTP 部署 / Docker / Nginx
+        - GitHub Actions 部署
+        - 文档
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本 / commit
+      placeholder: main @ abc1234 或 v0.1.0
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境信息
+      placeholder: |
+        OS: macOS 15
+        Python: 3.12
+        连接方式: STDIO / HTTP
+    validations:
+      required: false

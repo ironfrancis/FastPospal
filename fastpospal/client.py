@@ -22,7 +22,7 @@ class PospalApiError(Exception):
 
 
 class PospalClient:
-    """银豹云后台 Web API 客户端（基于流量逆向）。"""
+    """银豹云后台 Web API 客户端。"""
 
     def __init__(
         self,

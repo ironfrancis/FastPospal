@@ -1,7 +1,7 @@
 [project]
 name = "fastpospal"
 version = "0.1.0"
-description = "银豹 PosPal 逆向 MCP 服务"
+description = "银豹 PosPal Python SDK 与 MCP 服务"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
