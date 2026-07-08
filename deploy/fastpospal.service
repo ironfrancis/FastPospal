@@ -1,0 +1,16 @@
+[Unit]
+Description=FastPospal MCP Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/FastPospal
+EnvironmentFile=/opt/FastPospal/.env
+Environment=FASTMCP_STATELESS_HTTP=true
+ExecStart=/usr/local/bin/uv run uvicorn app:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

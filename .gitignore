@@ -1,0 +1,20 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.DS_Store
+.pospal_session.json
+
+# 本地/生产专用部署配置（含私有网络名、域名等，勿提交）
+deploy/docker-compose.prod.yml
+deploy/nginx-*.conf
+!deploy/nginx.conf.example

@@ -1,0 +1,32 @@
+# 生产部署：接入已有 Docker 网络，不暴露宿主机端口
+# 适用场景：与 Nginx / 其他容器同网，由反代对外提供 HTTPS
+#
+# 用法：
+#   cp deploy/docker-compose.prod.example.yml deploy/docker-compose.prod.yml
+#   # 编辑 external network name，或 export DOCKER_EXTERNAL_NETWORK=your_stack_network
+#   ./deploy/push-image.sh          # 推荐：本机构镜像再推送，服务器不 build
+#   docker compose -f deploy/docker-compose.prod.yml up -d
+#
+# Nginx 反代示例见 deploy/nginx.conf.example（location /mcp/）
+
+services:
+  fastpospal:
+    image: fastpospal:latest
+    pull_policy: never
+    container_name: fastpospal
+    env_file:
+      - ../.env
+    environment:
+      MCP_HOST: "0.0.0.0"
+      MCP_PORT: "8000"
+      FASTMCP_STATELESS_HTTP: "true"
+    restart: unless-stopped
+    mem_limit: 256m
+    memswap_limit: 256m
+    networks:
+      - external_network
+
+networks:
+  external_network:
+    external: true
+    name: ${DOCKER_EXTERNAL_NETWORK:-your_stack_network}
