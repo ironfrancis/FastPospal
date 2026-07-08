@@ -114,6 +114,30 @@ Agent 将自动调用对应 MCP 工具。
 
 ------------------------------------------------------------------------
 
+## 远程 HTTP 部署（Nginx + Docker）
+
+适用于 OPC Feed、Cursor 等通过 HTTPS 远程连接 MCP。
+
+1.  配置 `.env`：`POSPAL_*`、`MCP_AUTH_TOKEN`，以及公网域名白名单：
+
+    ``` text
+    FASTMCP_HTTP_ALLOWED_HOSTS=["your-domain.com"]
+    ```
+
+    经 Nginx 反代时 **必须** 设置，否则 Bearer 鉴权通过后 FastMCP 会因 `Host`
+    校验返回 **421 Misdirected Request**。
+
+2.  启动容器：`docker compose -f deploy/docker-compose.prod.yml up -d`
+
+3.  Nginx 反代 **不要用尾斜杠**（`/pospal/mcp` 而非 `/pospal/mcp/`），否则 FastMCP
+    会 307 到错误路径。萌萌书店示例见
+    `deploy/nginx-mmsd-pospal-mcp.conf`。
+
+4.  客户端 MCP URL 与 Nginx location 保持一致，例如
+    `https://mmsd.site/pospal/mcp`。
+
+------------------------------------------------------------------------
+
 ## 架构
 
 ``` text

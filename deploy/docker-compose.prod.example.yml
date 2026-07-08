@@ -20,6 +20,7 @@ services:
       MCP_HOST: "0.0.0.0"
       MCP_PORT: "8000"
       FASTMCP_STATELESS_HTTP: "true"
+      # 公网反代：在 ../.env 设置 FASTMCP_HTTP_ALLOWED_HOSTS=["your-domain.com"]
     restart: unless-stopped
     mem_limit: 256m
     memswap_limit: 256m
