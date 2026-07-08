@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 import httpx
 
@@ -161,7 +161,7 @@ class PospalClient:
         self.ensure_login()
         response = self._client.post(
             f"{self.base_url}{path}",
-            data=form,
+            content=urlencode(form, doseq=True),
             headers={"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"},
         )
         text = response.text.strip()
