@@ -149,10 +149,12 @@ Agent 将自动调用对应 MCP 工具。
 | Secret | 说明 |
 |--------|------|
 | `SSH_PRIVATE_KEY` | 能登录生产机的私钥（对应公钥写入服务器 `authorized_keys`） |
+| `DEPLOY_HOST` | 生产机 IP 或域名（不含用户名） |
+| `DEPLOY_USER` | SSH 登录用户，例如 `root` |
 
-生产机地址等写在 workflow 的 `env` 里（与 `deploy/push-image.sh` 一致）。服务器上的 `.env` **不会**被同步覆盖。
+服务器上的 `.env` **不会**被同步覆盖（仅含运行时 `POSPAL_*`、`MCP_AUTH_TOKEN` 等，不含 SSH 部署地址）。
 
-本地紧急发布仍可用：`bash deploy/push-image.sh`
+本地紧急发布：在 `.env` 配置 `DEPLOY_HOST` / `DEPLOY_USER` 后执行 `bash deploy/push-image.sh`，或临时 `SERVER=root@your-host bash deploy/push-image.sh`。
 
 ------------------------------------------------------------------------
 

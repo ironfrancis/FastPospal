@@ -17,6 +17,7 @@ from fastpospal.parsers import (
     parse_customer_rows,
     parse_html_table,
     parse_product_rows,
+    parse_stock_change_rows,
     parse_summary_span,
     parse_ticket_rows,
 )
@@ -284,7 +285,7 @@ class PospalService:
         return {
             "successed": summary.get("successed") and page.get("successed"),
             "totalRecord": summary.get("totalRecord", 0),
-            "summaryView": summary.get("summaryView"),
+            "summary": parse_summary_span(summary.get("summaryView") or ""),
             "pageIndex": page_index,
             "pageSize": page_size,
             "customers": customers,
@@ -396,7 +397,7 @@ class PospalService:
         user_id: int | None = None,
     ) -> dict[str, Any]:
         uid = user_id or self.client.user_id
-        return self.client.ajax(
+        result = self.client.ajax(
             "/Inventory/LoadStockChangeHistory",
             {
                 "userId": uid,
@@ -406,6 +407,11 @@ class PospalService:
                 "changeType": "",
             },
         )
+        return {
+            "successed": result.get("successed"),
+            "logs": parse_stock_change_rows(result.get("mainTableView") or ""),
+            "summary": parse_summary_span(result.get("summaryView") or ""),
+        }
 
     def list_stock_flows(
         self,
@@ -588,7 +594,7 @@ class PospalService:
         result: dict[str, Any] = {
             "successed": summary.get("successed") and page.get("successed"),
             "totalRecord": total,
-            "summaryView": summary.get("summaryView"),
+            "summary": parse_summary_span(summary.get("summaryView") or ""),
             "pageIndex": page_index,
             "pageSize": page_size,
             "tickets": tickets,

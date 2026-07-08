@@ -10,8 +10,6 @@ concurrency:
 
 env:
   IMAGE: fastpospal:latest
-  DEPLOY_HOST: 1.117.73.236
-  DEPLOY_USER: root
   REMOTE_DIR: /opt/FastPospal
 
 jobs:
@@ -40,12 +38,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ env.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Upload image to server
         run: |
           docker save "${{ env.IMAGE }}" | gzip -1 | \
-            ssh "${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}" 'gunzip | docker load'
+            ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" 'gunzip | docker load'
 
       - name: Sync deploy files
         run: |
@@ -56,15 +54,15 @@ jobs:
             --exclude='.git' \
             --exclude='._*' \
             -C . . | \
-            ssh "${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}" \
+            ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
               "mkdir -p ${{ env.REMOTE_DIR }} && tar xzf - -C ${{ env.REMOTE_DIR }}"
 
       - name: Restart container
         run: |
-          ssh "${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}" \
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
             "cd ${{ env.REMOTE_DIR }} && docker compose -f deploy/docker-compose.prod.yml up -d"
 
       - name: Smoke test
         run: |
-          ssh "${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}" \
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
             "docker exec fastpospal uv run python -c 'import fastpospal; print(\"ok\")'"

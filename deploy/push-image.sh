@@ -5,8 +5,24 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IMAGE="${IMAGE:-fastpospal:latest}"
-SERVER="${SERVER:-root@1.117.73.236}"
 REMOTE_DIR="${REMOTE_DIR:-/opt/FastPospal}"
+
+if [[ -f "${ROOT}/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "${ROOT}/.env"
+  set +a
+fi
+
+SERVER="${SERVER:-}"
+if [[ -z "${SERVER}" && -n "${DEPLOY_HOST:-}" ]]; then
+  SERVER="${DEPLOY_USER:-root}@${DEPLOY_HOST}"
+fi
+
+if [[ -z "${SERVER}" ]]; then
+  echo "请设置 SERVER，或在 .env 中配置 DEPLOY_HOST（及可选 DEPLOY_USER）" >&2
+  exit 1
+fi
 
 echo "==> 构建 ${IMAGE} (linux/amd64) ..."
 docker build --platform linux/amd64 -f "${ROOT}/deploy/Dockerfile" -t "${IMAGE}" "${ROOT}"
