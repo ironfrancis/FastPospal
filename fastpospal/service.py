@@ -13,9 +13,11 @@ from fastpospal.builders import (
 )
 from fastpospal.client import PospalClient
 from fastpospal.parsers import (
+    parse_business_summary_view,
     parse_customer_rows,
     parse_html_table,
     parse_product_rows,
+    parse_summary_span,
     parse_ticket_rows,
 )
 
@@ -477,7 +479,74 @@ class PospalService:
         raw = result.get("suppliersJson") or "[]"
         return json.loads(raw) if isinstance(raw, str) else raw
 
+    # ── 营业 / 销售报表 ────────────────────────────────────
+
+    def business_summary(
+        self,
+        *,
+        begin_datetime: str,
+        end_datetime: str,
+        user_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Dashboard 营业概况（营业实收、客单数等）。"""
+        uid = user_id or self.client.user_id
+        result = self.client.ajax(
+            "/Dashboard/LoadBusinessSummary",
+            {
+                "beginDateTime": begin_datetime,
+                "endDateTime": end_datetime,
+                "userId": uid,
+            },
+        )
+        return {
+            "successed": result.get("successed"),
+            "store_name": self.client.get_store_name(),
+            "begin_datetime": begin_datetime,
+            "end_datetime": end_datetime,
+            "metrics": parse_business_summary_view(result.get("view") or ""),
+        }
+
+    def product_sale_summary(
+        self,
+        *,
+        begin_datetime: str,
+        end_datetime: str,
+        order_source: str = "",
+        page_index: int = 1,
+        page_size: int = 20,
+        user_id: int | None = None,
+    ) -> dict[str, Any]:
+        """商品销售明细汇总（总单数、商品实收、利润等）。"""
+        uid = user_id or self.client.user_id
+        criteria: dict[str, Any] = {
+            "beginDateTime": begin_datetime,
+            "endDateTime": end_datetime,
+            "userId": uid,
+            "orderSource": order_source,
+            "pageIndex": page_index,
+            "pageSize": page_size,
+        }
+        summary = self.client.ajax("/Report/LoadProductSaleDetailsSummary", criteria)
+        page = self.client.ajax("/Report/LoadProductSaleDetailsByPage", criteria)
+        items = parse_html_table(page.get("contentView") or "")
+        return {
+            "successed": summary.get("successed") and page.get("successed"),
+            "store_name": self.client.get_store_name(),
+            "begin_datetime": begin_datetime,
+            "end_datetime": end_datetime,
+            "order_source": order_source or "全部渠道",
+            "totalRecord": summary.get("totalRecord", 0),
+            "summary": parse_summary_span(summary.get("summaryView") or ""),
+            "pageIndex": page_index,
+            "pageSize": page_size,
+            "items": items,
+        }
+
     # ── 销售单据 ──────────────────────────────────────────
+
+    _TICKETS_EMPTY_HINT = (
+        "销售单据接口返回 0 条时，不代表无营业；请改用 business_summary 或 product_sale_summary。"
+    )
 
     def list_tickets(
         self,
@@ -515,14 +584,18 @@ class PospalService:
         summary = self.client.ajax_form("/Report/LoadTicketSummary", form)
         page = self.client.ajax_form("/Report/LoadTicketsByPage", form)
         tickets = parse_ticket_rows(page.get("contentView") or "")
-        return {
+        total = summary.get("totalRecord", 0)
+        result: dict[str, Any] = {
             "successed": summary.get("successed") and page.get("successed"),
-            "totalRecord": summary.get("totalRecord", 0),
+            "totalRecord": total,
             "summaryView": summary.get("summaryView"),
             "pageIndex": page_index,
             "pageSize": page_size,
             "tickets": tickets,
         }
+        if total == 0:
+            result["hint"] = self._TICKETS_EMPTY_HINT
+        return result
 
     # ── 网单 / 采购 ───────────────────────────────────────
 

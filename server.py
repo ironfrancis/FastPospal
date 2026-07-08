@@ -20,6 +20,9 @@ mcp = FastMCP(
         "支持商品/分类/会员/库存/货流/单据/网单/采购的读写操作。"
         "写操作会修改门店真实数据，仅在测试账号或明确授权时使用。"
         "环境变量：POSPAL_ACCOUNT, POSPAL_PASSWORD。"
+        "查日营业额/客单数优先用 pospal_business_summary；"
+        "查商品级销售汇总用 pospal_product_sale_summary；"
+        "pospal_list_tickets 在部分门店可能始终返回 0，不能据此判断无营业。"
     ),
 )
 
@@ -50,7 +53,7 @@ def _get_openapi() -> PospalOpenApiClient | None:
 
 @mcp.tool
 def pospal_session_info() -> dict[str, Any]:
-    """查看当前银豹登录会话（门店子域、userId、是否有效）。"""
+    """查看当前银豹登录会话（账号、门店名称、子域、userId、是否有效）。"""
     return _get_service().client.session_info()
 
 
@@ -315,6 +318,44 @@ def pospal_list_suppliers() -> list[dict[str, Any]]:
 
 
 @mcp.tool
+def pospal_business_summary(
+    begin_datetime: str,
+    end_datetime: str,
+) -> dict[str, Any]:
+    """查门店营业概况（推荐用于日营业额、客单数）。
+
+    返回营业实收、消耗金额、客单总数等指标。时间格式：YYYY-MM-DD HH:mm:ss，
+    例如查 2026-07-08 全天：begin_datetime=2026-07-08 00:00:00，end_datetime=2026-07-08 23:59:59。
+    """
+    return _get_service().business_summary(
+        begin_datetime=begin_datetime,
+        end_datetime=end_datetime,
+    )
+
+
+@mcp.tool
+def pospal_product_sale_summary(
+    begin_datetime: str,
+    end_datetime: str,
+    order_source: str = "",
+    page_index: int = 1,
+    page_size: int = 20,
+) -> dict[str, Any]:
+    """查商品销售明细汇总（总单数、商品实收、利润）及分页明细。
+
+    时间格式：YYYY-MM-DD HH:mm:ss。order_source 可选：ZIYING=自营、xianxia=线下订单，
+    MEITUAN_WAIMAI=美团、ELEME_WAIMAI=饿了么；留空表示全部渠道。
+    """
+    return _get_service().product_sale_summary(
+        begin_datetime=begin_datetime,
+        end_datetime=end_datetime,
+        order_source=order_source,
+        page_index=page_index,
+        page_size=page_size,
+    )
+
+
+@mcp.tool
 def pospal_list_tickets(
     begin_time: str,
     end_time: str,
@@ -323,7 +364,13 @@ def pospal_list_tickets(
     page_index: int = 1,
     page_size: int = 20,
 ) -> dict[str, Any]:
-    """分页查销售单据。ticket_type: 0=有效, 1=作废, 4=退货, 2=会员, 3=批发。"""
+    """分页查销售单据流水（单号、收银员、金额等明细）。
+
+    注意：部分门店（如书店）该接口可能始终返回 0 条，不代表无营业。
+    查日营业额请用 pospal_business_summary；查商品销售汇总请用 pospal_product_sale_summary。
+
+    时间格式：YYYY-MM-DD HH:mm:ss。ticket_type: 0=有效, 1=作废, 4=退货, 2=会员, 3=批发。
+    """
     return _get_service().list_tickets(
         begin_time=begin_time,
         end_time=end_time,

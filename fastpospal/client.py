@@ -197,10 +197,23 @@ class PospalClient:
         except json.JSONDecodeError as exc:
             raise PospalApiError(f"JSON 解析失败: {text[:200]}") from exc
 
+    def get_store_name(self) -> str | None:
+        """从 Dashboard 页面解析当前门店名称。"""
+        if not self.store_host:
+            return None
+        try:
+            response = self._client.get(f"{self.store_host}/Dashboard")
+            match = re.search(r"yb-menu-storeAccount_header_title\">([^<]+)<", response.text)
+            return match.group(1).strip() if match else None
+        except httpx.HTTPError:
+            return None
+
     def session_info(self) -> dict[str, Any]:
+        logged_in = bool(self.store_host and self._probe_session())
         return {
             "account": self.account,
             "store_host": self.store_host,
+            "store_name": self.get_store_name() if logged_in else None,
             "user_id": self.user_id,
-            "logged_in": bool(self.store_host and self._probe_session()),
+            "logged_in": logged_in,
         }

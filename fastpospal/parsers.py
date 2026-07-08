@@ -120,3 +120,32 @@ def extract_product_id_from_html(content_view: str) -> int | None:
     if match:
         return int(match.group(1))
     return None
+
+
+def parse_business_summary_view(view: str) -> dict[str, str]:
+    """解析 Dashboard /LoadBusinessSummary 返回的 HTML 指标卡片。"""
+    soup = BeautifulSoup(view, "html.parser")
+    metrics: dict[str, str] = {}
+    for item in soup.select("li.bussinessItem-percent, li.bussinessItem"):
+        value_el = item.select_one("p.blue")
+        label_el = item.select_one(".subtitle")
+        if not value_el or not label_el:
+            continue
+        label = label_el.get_text(strip=True)
+        label = re.sub(r"\(.*$", "", label).strip()
+        if label:
+            metrics[label] = value_el.get_text(strip=True)
+    return metrics
+
+
+def parse_summary_span(summary_view: str) -> dict[str, str]:
+    """解析 summaryView 中的「键：值」汇总文本（如商品销售明细）。"""
+    text = BeautifulSoup(summary_view, "html.parser").get_text(" ", strip=True)
+    metrics: dict[str, str] = {}
+    for match in re.finditer(r"([^，,：:]+)[：:]\s*([\d.]+%?)", text):
+        key = match.group(1).strip()
+        key = re.sub(r"^[（(\s]+", "", key).strip()
+        key = re.sub(r"[\s）)]+$", "", key).strip()
+        if key:
+            metrics[key] = match.group(2).strip()
+    return metrics
