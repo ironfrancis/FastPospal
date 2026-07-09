@@ -10,6 +10,7 @@ from fastmcp import FastMCP
 from fastpospal.client import PospalClient
 from fastpospal.openapi import PospalOpenApiClient
 from fastpospal.service import PospalService
+from fastpospal.semantic.service import PospalSemanticService
 
 load_dotenv()
 
@@ -20,8 +21,9 @@ mcp = FastMCP(
         "支持商品/分类/会员/库存/货流/单据/网单/采购的读写操作。"
         "写操作会修改门店真实数据，仅在测试账号或明确授权时使用。"
         "环境变量：POSPAL_ACCOUNT, POSPAL_PASSWORD。"
-        "查日营业额/客单数优先用 pospal_business_summary；"
-        "查商品级销售汇总用 pospal_product_sale_summary；"
+        "查日营业额/客单数优先用 pospal_business_summary 或 pospal_sem_get_store_sales_summary；"
+        "查商品级销售汇总用 pospal_product_sale_summary 或 pospal_sem_query_category_sales；"
+        "按名称/条码找商品优先 pospal_sem_find_products；"
         "pospal_list_tickets 在部分门店可能始终返回 0，不能据此判断无营业。"
     ),
 )
@@ -36,6 +38,11 @@ def _get_service() -> PospalService:
     client = PospalClient(account=account, password=password)
     client.login()
     return PospalService(client)
+
+
+@lru_cache(maxsize=1)
+def _get_semantic() -> PospalSemanticService:
+    return PospalSemanticService(_get_service())
 
 
 @lru_cache(maxsize=1)
@@ -425,6 +432,131 @@ def pospal_openapi_status() -> dict[str, Any]:
         "configured": client is not None,
         "hint": "向银豹业务申请 appId/appKey 后设置 POSPAL_APP_ID / POSPAL_APP_KEY",
     }
+
+
+# ── 语义层（pospal_sem_*） ───────────────────────────────
+
+
+@mcp.tool
+def pospal_sem_find_products(keyword: str, limit: int = 5, shop_names: str = "") -> dict[str, Any]:
+    """按名称或条码搜索商品档案（名称、价格、分类、条码）。"""
+    return _get_semantic().find_products(keyword, limit=limit, shop_names=shop_names or None)
+
+
+@mcp.tool
+def pospal_sem_check_product_stock(keyword: str, shop_names: str = "") -> dict[str, Any]:
+    """查询商品当前实时库存数量。"""
+    return _get_semantic().check_product_stock(keyword, shop_names=shop_names or None)
+
+
+@mcp.tool
+def pospal_sem_query_category_sales(
+    category_name: str,
+    start_date: str = "",
+    end_date: str = "",
+    shop_names: str = "",
+    limit: int = 30,
+) -> dict[str, Any]:
+    """查询某类商品的销售聚合（自动识别分类，无需先查分类列表）。"""
+    return _get_semantic().query_category_sales(
+        category_name,
+        start_date=start_date or None,
+        end_date=end_date or None,
+        shop_names=shop_names or None,
+        limit=limit,
+    )
+
+
+@mcp.tool
+def pospal_sem_get_store_sales_summary(
+    start_date: str = "",
+    end_date: str = "",
+    shop_names: str = "",
+) -> dict[str, Any]:
+    """获取全店整体销售汇总（总营业额、总交易笔数等）。"""
+    return _get_semantic().get_store_sales_summary(
+        start_date=start_date or None,
+        end_date=end_date or None,
+        shop_names=shop_names or None,
+    )
+
+
+@mcp.tool
+def pospal_sem_query_sales_detail(
+    search: str = "",
+    start_date: str = "",
+    end_date: str = "",
+    shop_names: str = "",
+    page: int = 1,
+    size: int = 20,
+    compact: bool = False,
+) -> dict[str, Any]:
+    """查询逐笔销售明细流水（可按商品名/条码/分类关键词筛选）。"""
+    return _get_semantic().query_sales_detail(
+        search=search or None,
+        start_date=start_date or None,
+        end_date=end_date or None,
+        shop_names=shop_names or None,
+        page=page,
+        size=size,
+        compact=compact,
+    )
+
+
+@mcp.tool
+def pospal_sem_query_stock_flows(
+    start_date: str = "",
+    end_date: str = "",
+    shop_names: str = "",
+    page: int = 1,
+    size: int = 20,
+    compact: bool = False,
+) -> dict[str, Any]:
+    """查询库存流水记录（入库、出库、盘点等变动）。"""
+    return _get_semantic().query_stock_flows(
+        start_date=start_date or None,
+        end_date=end_date or None,
+        shop_names=shop_names or None,
+        page=page,
+        size=size,
+        compact=compact,
+    )
+
+
+@mcp.tool
+def pospal_sem_list_products_admin(
+    page: int = 1,
+    size: int = 20,
+    keyword: str = "",
+    shop_names: str = "",
+    compact: bool = False,
+) -> dict[str, Any]:
+    """管理员分页浏览完整商品列表。"""
+    return _get_semantic().list_products_admin(
+        page=page,
+        size=size,
+        keyword=keyword,
+        shop_names=shop_names or None,
+        compact=compact,
+    )
+
+
+@mcp.tool
+def pospal_sem_analyze_restock_needs(
+    days: int = 3,
+    shop_names: str = "",
+    hot_threshold: float = 0.5,
+    urgent_threshold: float = 0.8,
+    sold_out_threshold: float = 1.0,
+) -> dict[str, Any]:
+    """分析哪些商品需要补货（综合库存与近期销量）。"""
+    return _get_semantic().analyze_restock_needs(
+        days=days,
+        shop_names=shop_names or None,
+        hot_threshold=hot_threshold,
+        urgent_threshold=urgent_threshold,
+        sold_out_threshold=sold_out_threshold,
+    )
 
 
 def main() -> None:
