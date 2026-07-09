@@ -65,6 +65,40 @@ class PospalClient:
             raise PospalAuthError("尚未登录，请先调用 login()")
         return self.store_host
 
+    def _cookie_snapshot(self) -> list[dict[str, str]]:
+        snapshot: list[dict[str, str]] = []
+        for cookie in self._client.cookies.jar:
+            snapshot.append(
+                {
+                    "name": cookie.name,
+                    "value": cookie.value,
+                    "domain": cookie.domain or ".pospal.cn",
+                    "path": cookie.path or "/",
+                }
+            )
+        return snapshot
+
+    def _restore_cookies(self, cookies: object) -> None:
+        self._client.cookies.clear()
+        if isinstance(cookies, list):
+            for item in cookies:
+                if not isinstance(item, dict):
+                    continue
+                name = item.get("name")
+                value = item.get("value")
+                if not name:
+                    continue
+                self._client.cookies.set(
+                    name,
+                    value,
+                    domain=item.get("domain") or ".pospal.cn",
+                    path=item.get("path") or "/",
+                )
+            return
+        if isinstance(cookies, dict):
+            for name, value in cookies.items():
+                self._client.cookies.set(name, value, domain=".pospal.cn")
+
     def _save_session(self) -> None:
         if not self.session_file:
             return
@@ -72,7 +106,7 @@ class PospalClient:
             "account": self.account,
             "store_host": self.store_host,
             "user_id": self.user_id,
-            "cookies": dict(self._client.cookies),
+            "cookies": self._cookie_snapshot(),
         }
         self.session_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
 
@@ -87,8 +121,7 @@ class PospalClient:
             return False
         self.store_host = payload.get("store_host")
         self.user_id = payload.get("user_id")
-        for name, value in (payload.get("cookies") or {}).items():
-            self._client.cookies.set(name, value, domain=".pospal.cn")
+        self._restore_cookies(payload.get("cookies") or [])
         return bool(self.store_host)
 
     def login(self, *, force: bool = False) -> dict[str, Any]:
