@@ -53,7 +53,7 @@ body:
         - Python SDK（fastpospal/）
         - MCP Server（server.py）
         - HTTP 部署 / Docker / Nginx
-        - GitHub Actions 部署
+        - 本地发布（deploy/push-image.sh）
         - 文档
         - 其他
     validations:

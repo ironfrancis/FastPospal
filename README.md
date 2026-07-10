@@ -138,25 +138,19 @@ Agent 将自动调用对应 MCP 工具。
 4.  客户端 MCP URL 与 Nginx location 保持一致，例如
     `https://mmsd.site/pospal/mcp`。
 
-### GitHub Actions 自动部署
+### 发布到生产
 
-`main` 分支 push 或 merge 后，`.github/workflows/deploy.yml` 会自动：
+在 `.env` 配置 `DEPLOY_HOST` / `DEPLOY_USER`（仅本机，勿提交），然后：
 
-1.  `uv sync` + 静态检查
-2.  构建 `linux/amd64` 镜像
-3.  SSH 上传到生产机并 `docker compose up -d`
+```bash
+bash deploy/push-image.sh
+```
 
-首次启用需在 GitHub 仓库 **Settings → Secrets and variables → Actions** 添加：
+脚本会：本机构建 `linux/amd64` 镜像 → SSH 上传 → 同步代码 → 重启容器 → smoke test。
 
-| Secret | 说明 |
-|--------|------|
-| `SSH_PRIVATE_KEY` | 能登录生产机的私钥（对应公钥写入服务器 `authorized_keys`） |
-| `DEPLOY_HOST` | 生产机 IP 或域名（不含用户名） |
-| `DEPLOY_USER` | SSH 登录用户，例如 `root` |
+临时指定服务器：`SERVER=root@your-host bash deploy/push-image.sh`
 
-服务器上的 `.env` **不会**被同步覆盖（仅含运行时 `POSPAL_*`、`MCP_AUTH_TOKEN` 等，不含 SSH 部署地址）。
-
-本地紧急发布：在 `.env` 配置 `DEPLOY_HOST` / `DEPLOY_USER` 后执行 `bash deploy/push-image.sh`，或临时 `SERVER=root@your-host bash deploy/push-image.sh`。
+服务器上的 `.env` **不会**被覆盖（含 `POSPAL_*`、`MCP_AUTH_TOKEN` 等运行时配置）。
 
 ------------------------------------------------------------------------
 

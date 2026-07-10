@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# 本机构建 linux/amd64 镜像并推到服务器（避免生产机拉基础镜像过慢）
-# 日常发布可走 GitHub Actions：push/merge 到 main 自动部署（见 .github/workflows/deploy.yml）
+# 本机构建 linux/amd64 镜像并推到生产服务器（推荐发布方式）
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -40,5 +39,10 @@ tar czf - \
   -C "${ROOT}" . \
   | ssh "${SERVER}" "mkdir -p ${REMOTE_DIR} && tar xzf - -C ${REMOTE_DIR}"
 
-echo "==> 完成。在服务器执行："
-echo "    cd ${REMOTE_DIR} && docker compose -f deploy/docker-compose.prod.yml up -d"
+echo "==> 重启容器 ..."
+ssh "${SERVER}" "cd ${REMOTE_DIR} && docker compose -f deploy/docker-compose.prod.yml up -d"
+
+echo "==> Smoke test ..."
+ssh "${SERVER}" "docker exec fastpospal uv run python -c 'import fastpospal; print(\"ok\")'"
+
+echo "==> 部署完成"
