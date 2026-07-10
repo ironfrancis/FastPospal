@@ -135,6 +135,32 @@ def main() -> int:
     biz = svc.business_summary(begin_datetime=day_begin, end_datetime=day_end)
     report.check("business_summary.metrics", "营业实收" in biz.get("metrics", {}), str(biz.get("metrics")))
     report.check("business_summary.no_html", not has_raw_html(biz))
+    if biz.get("metrics", {}).get("充值实收") is not None:
+        report.check(
+            "business_summary.recharge_metric",
+            True,
+            f"充值实收={biz['metrics'].get('充值实收')}",
+        )
+    else:
+        report.skip("business_summary.recharge_metric", "昨日无充值实收子指标")
+
+    # ── 5b. 会员充值汇总 ──
+    june_begin = "2026-06-01 00:00:00"
+    june_end = "2026-06-30 23:59:59"
+    recharge = svc.recharge_summary(begin_datetime=june_begin, end_datetime=june_end)
+    report.check(
+        "recharge_summary.total_amount",
+        recharge.get("summary", {}).get("总充值金额") == "3100.00",
+        str(recharge.get("summary")),
+    )
+    report.check("recharge_summary.no_html", not has_raw_html(recharge))
+    biz_june = svc.business_summary(begin_datetime=june_begin, end_datetime=june_end)
+    if recharge.get("summary", {}).get("总充值金额") and biz_june.get("metrics", {}).get("充值实收"):
+        report.check(
+            "recharge_summary.matches_business_recharge",
+            recharge["summary"]["总充值金额"] == biz_june["metrics"]["充值实收"],
+            f"recharge={recharge['summary']['总充值金额']}, business={biz_june['metrics']['充值实收']}",
+        )
 
     # ── 6. 销售汇总 ──
     sale = svc.product_sale_summary(begin_datetime=day_begin, end_datetime=day_end, page_size=3)

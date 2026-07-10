@@ -187,6 +187,11 @@ def extract_product_id_from_html(content_view: str) -> int | None:
     return None
 
 
+def _normalize_metric_label(label: str) -> str:
+    label = re.sub(r"\(.*$", "", label).strip()
+    return label
+
+
 def parse_business_summary_view(view: str) -> dict[str, str]:
     """解析 Dashboard /LoadBusinessSummary 返回的 HTML 指标卡片。"""
     soup = BeautifulSoup(view, "html.parser")
@@ -194,12 +199,18 @@ def parse_business_summary_view(view: str) -> dict[str, str]:
     for item in soup.select("li.bussinessItem-percent, li.bussinessItem"):
         value_el = item.select_one("p.blue")
         label_el = item.select_one(".subtitle")
-        if not value_el or not label_el:
-            continue
-        label = label_el.get_text(strip=True)
-        label = re.sub(r"\(.*$", "", label).strip()
-        if label:
-            metrics[label] = value_el.get_text(strip=True)
+        if value_el and label_el:
+            label = _normalize_metric_label(label_el.get_text(strip=True))
+            if label:
+                metrics[label] = value_el.get_text(strip=True)
+        for bar in item.select(".percentBar"):
+            left_el = bar.select_one(".percentBar__top-left")
+            right_el = bar.select_one(".percentBar__top-right")
+            if not left_el or not right_el:
+                continue
+            label = _normalize_metric_label(left_el.get_text(strip=True))
+            if label:
+                metrics[label] = right_el.get_text(strip=True)
     return metrics
 
 

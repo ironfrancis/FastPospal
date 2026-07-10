@@ -180,3 +180,32 @@ class TestParseBusinessSummaryView:
         </li></ul>"""
         result = parse_business_summary_view(html)
         assert result.get("营业实收") == "1702.82"
+
+    def test_percent_bar_metrics(self) -> None:
+        html = """
+        <li class="bussinessItem-percent">
+          <div class="bussinessItem-left">
+            <p class="blue">1237.92</p>
+            <div class="subtitle">营业实收(元)</div>
+          </div>
+          <div class="bussinessItem-right">
+            <div class="percentBar">
+              <div class="percentBar__top clearfix">
+                <div class="percentBar__top-left fl">充值实收(元)</div>
+                <div class="percentBar__top-right fr">500.00</div>
+              </div>
+            </div>
+          </div>
+        </li>"""
+        result = parse_business_summary_view(html)
+        assert result.get("营业实收") == "1237.92"
+        assert result.get("充值实收") == "500.00"
+
+
+class TestParseRechargeSummarySpan:
+    def test_recharge_summary(self) -> None:
+        html = "<span>记录：17, 总充值金额：3100.00, 总赠送金额：384.00</span>"
+        result = parse_summary_span(html)
+        assert result.get("记录") == "17"
+        assert result.get("总充值金额") == "3100.00"
+        assert result.get("总赠送金额") == "384.00"

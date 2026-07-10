@@ -53,7 +53,8 @@ uv run python -m compileall fastpospal server.py app.py
 | 目录 | 说明 |
 |------|------|
 | `fastpospal/` | Python SDK 核心 |
-| `server.py` | MCP Server 工具定义 |
+| `fastpospal/mcp/` | MCP Server 工具定义（按业务域拆分） |
+| `server.py` | MCP 启动入口 |
 | `app.py` | HTTP ASGI 入口 |
 | `tests/` | 单元测试 |
 | `deploy/` | Docker / Nginx 部署示例 |

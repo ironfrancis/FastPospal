@@ -601,6 +601,75 @@ class PospalService:
             "items": items,
         }
 
+    # ── 会员充值 ──────────────────────────────────────────
+
+    def recharge_summary(
+        self,
+        *,
+        begin_datetime: str,
+        end_datetime: str,
+        user_id: int | None = None,
+    ) -> dict[str, Any]:
+        """会员充值汇总（总充值金额、总赠送金额、记录数）。"""
+        uid = user_id or self.client.user_id
+        criteria: dict[str, Any] = {
+            "beginDateTime": begin_datetime,
+            "endDateTime": end_datetime,
+            "userId": uid,
+            "pageIndex": 1,
+            "pageSize": 1,
+        }
+        result = self.client.ajax("/CardReport/LoadRechargeLogsSummary", criteria)
+        return {
+            "successed": result.get("successed"),
+            "store_name": self.client.get_store_name(),
+            "begin_datetime": begin_datetime,
+            "end_datetime": end_datetime,
+            "totalRecord": result.get("totalRecord", 0),
+            "summary": parse_summary_span(result.get("summaryView") or ""),
+        }
+
+    def list_recharge_logs(
+        self,
+        *,
+        begin_datetime: str,
+        end_datetime: str,
+        keyword: str = "",
+        payment_method: str = "",
+        guider_uid: str = "",
+        page_index: int = 1,
+        page_size: int = 20,
+        user_id: int | None = None,
+    ) -> dict[str, Any]:
+        """会员充值明细分页（逐笔充值流水）。"""
+        uid = user_id or self.client.user_id
+        summary_criteria: dict[str, Any] = {
+            "beginDateTime": begin_datetime,
+            "endDateTime": end_datetime,
+            "userId": uid,
+            "pageIndex": page_index,
+            "pageSize": page_size,
+            "keyword": keyword,
+            "paymentMethod": payment_method,
+            "guiderUid": guider_uid,
+            "createUserId": str(uid) if uid else "",
+        }
+        page_criteria = {**summary_criteria}
+        summary = self.client.ajax("/CardReport/LoadRechargeLogsSummary", summary_criteria)
+        page = self.client.ajax("/CardReport/LoadRechargelogsByPage", page_criteria)
+        logs = parse_html_table(page.get("contentView") or "")
+        return {
+            "successed": summary.get("successed") and page.get("successed"),
+            "store_name": self.client.get_store_name(),
+            "begin_datetime": begin_datetime,
+            "end_datetime": end_datetime,
+            "totalRecord": summary.get("totalRecord", 0),
+            "summary": parse_summary_span(summary.get("summaryView") or ""),
+            "pageIndex": page_index,
+            "pageSize": page_size,
+            "logs": logs,
+        }
+
     # ── 销售单据 ──────────────────────────────────────────
 
     _TICKETS_EMPTY_HINT = (
